@@ -5,6 +5,7 @@ from airflow.operators.bash import BashOperator
 from airflow.utils.dates import days_ago
 import requests
 import json
+import os
 
 args = {
     'owner': 'airflow',
@@ -13,7 +14,7 @@ args = {
 
 def alert():
     current_time = datetime.now()
-    url = "https://hooks.slack.com/services/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"
+    hook = os.environ.get("HOOK")
 
     payload = json.dumps({
     "text": "Hello, World! {}".format(current_time)
@@ -22,7 +23,7 @@ def alert():
     'Content-type': 'application/json'
     }
 
-    response = requests.request("POST", url, headers=headers, data=payload)
+    response = requests.request("POST", hook, headers=headers, data=payload)
 
 with DAG(
     dag_id='test_bash_operartor',
