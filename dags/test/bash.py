@@ -1,20 +1,22 @@
 from datetime import timedelta, datetime
+import datetime as dt
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.operators.bash import BashOperator
+from airflow.models import Variable
 from airflow.utils.dates import days_ago
 import requests
 import json
-import os
+import pendulum
 
 args = {
-    'owner': 'airflow',
+    'owner': 'airflow'
 }
-
 
 def alert():
     current_time = datetime.now()
-    hook = os.environ.get("HOOK")
+    hook = Variable.get("hook_slack")
+    print(hook)
 
     payload = json.dumps({
     "text": "Hello, World! {}".format(current_time)
@@ -28,11 +30,12 @@ def alert():
 with DAG(
     dag_id='test_bash_operartor',
     default_args=args,
-    schedule_interval=timedelta(minutes=1),
-    start_date=days_ago(2),
-    dagrun_timeout=timedelta(minutes=60)
+    schedule_interval="*/2 * * * *",
+    start_date=pendulum.datetime(2023, 2, 11, tz="UTC"),
+    dagrun_timeout=timedelta(minutes=10),
+    catchup=False # Don't run previous and backfill, run only latests
 ) as dag:
-    task1 = BashOperator(task_id='first_task', bash_command=f"echo Hello World", dag=dag)
+    task1 = BashOperator(task_id='first_task', bash_command="echo Hello World", dag=dag)
     task2 = PythonOperator(task_id="second_task", python_callable=alert, dag=dag)
 
     # Set fist_task to run before second_task
